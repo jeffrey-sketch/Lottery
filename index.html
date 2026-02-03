@@ -232,7 +232,7 @@
         /* 檔案上傳按鈕樣式 */
         .file-upload-wrapper {
             position: relative;
-            margin-bottom: 1rem;
+            margin-bottom: 0.5rem;
             border: 1px dashed rgba(255, 255, 255, 0.3);
             border-radius: 8px;
             padding: 1rem;
@@ -246,6 +246,19 @@
             top: 0; left: 0; width: 100%; height: 100%;
             opacity: 0; cursor: pointer;
         }
+
+        .reset-bg-btn {
+            background: transparent;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: rgba(255, 255, 255, 0.8);
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            margin-bottom: 1rem;
+            display: inline-block;
+        }
+        .reset-bg-btn:hover { background: rgba(255,255,255,0.1); color: white; }
 
         .save-btn {
             background: #d4af37; color: #2d0a0a; border: none;
@@ -302,6 +315,7 @@
                 <span class="text-sm opacity-80" data-i18n="clickToUpload">點擊上傳背景圖片</span>
                 <input type="file" id="bgInput" class="file-upload-input" accept="image/*" onchange="handleBgUpload(this)">
             </div>
+            <button onclick="clearCustomBg()" class="reset-bg-btn" data-i18n="resetBg">恢復預設背景</button>
 
             <div class="my-4 border-t border-white/10"></div>
 
@@ -335,7 +349,7 @@
                 <i data-lucide="settings"></i>
             </button>
 
-            <!-- 標題區域：已移除「馬上如意」 -->
+            <!-- 標題區域 -->
             <h1 class="text-4xl font-bold mb-2 text-shadow-sm mt-4" data-i18n="appTitle">抽籤系統</h1>
             <p class="text-sm opacity-90 mb-4" data-i18n="appSubtitle">幸運隨機產生器</p>
 
@@ -372,6 +386,7 @@
                 language: "語言",
                 bgImage: "更換背景",
                 clickToUpload: "點擊上傳背景圖片",
+                resetBg: "恢復預設背景",
                 numRange: "數字範圍",
                 min: "最小值",
                 max: "最大值",
@@ -388,7 +403,9 @@
                 msgInvalid: "請輸入有效的數字！",
                 msgMinMax: "最小值必須小於最大值！",
                 msgReset: "設定已變更，歷史紀錄已重置",
-                msgAllDrawn: "🎉 所有數字都已經抽完囉！"
+                msgAllDrawn: "🎉 所有數字都已經抽完囉！",
+                msgBgSaved: "背景已儲存！",
+                msgBgError: "圖片太大，無法儲存到瀏覽器，但本次使用仍有效。"
             },
             'zh-CN': {
                 appTitle: "抽签系统",
@@ -397,6 +414,7 @@
                 language: "语言",
                 bgImage: "更换背景",
                 clickToUpload: "点击上传背景图片",
+                resetBg: "恢复默认背景",
                 numRange: "数字范围",
                 min: "最小值",
                 max: "最大值",
@@ -413,7 +431,9 @@
                 msgInvalid: "请输入有效的数字！",
                 msgMinMax: "最小值必须小于最大值！",
                 msgReset: "设置已变更，历史记录已重置",
-                msgAllDrawn: "🎉 所有数字都已经抽完啦！"
+                msgAllDrawn: "🎉 所有数字都已经抽完啦！",
+                msgBgSaved: "背景已保存！",
+                msgBgError: "图片太大，无法保存到浏览器，但本次使用仍有效。"
             },
             'en': {
                 appTitle: "Lucky Draw",
@@ -422,6 +442,7 @@
                 language: "Language",
                 bgImage: "Background Image",
                 clickToUpload: "Click to upload image",
+                resetBg: "Reset Default Background",
                 numRange: "Number Range",
                 min: "Min Value",
                 max: "Max Value",
@@ -438,7 +459,9 @@
                 msgInvalid: "Please input valid numbers!",
                 msgMinMax: "Min must be less than Max!",
                 msgReset: "Settings changed, history reset.",
-                msgAllDrawn: "🎉 All numbers have been drawn!"
+                msgAllDrawn: "🎉 All numbers have been drawn!",
+                msgBgSaved: "Background saved!",
+                msgBgError: "Image too large to save, but works for this session."
             }
         };
 
@@ -454,9 +477,14 @@
             if (savedSettings) {
                 try {
                     const parsed = JSON.parse(savedSettings);
-                    // 合併設定，確保新欄位存在
                     currentSettings = { ...currentSettings, ...parsed };
                 } catch (e) { console.error(e); }
+            }
+
+            // 載入自訂背景
+            const savedBg = localStorage.getItem('lottery_custom_bg');
+            if (savedBg) {
+                document.body.style.backgroundImage = `url('${savedBg}')`;
             }
 
             // 應用設定到 UI
@@ -492,31 +520,46 @@
             if (!translations[lang]) lang = 'zh-TW';
             const t = translations[lang];
 
-            // 更新所有帶 data-i18n 的元素
             document.querySelectorAll('[data-i18n]').forEach(el => {
                 const key = el.getAttribute('data-i18n');
                 if (t[key]) el.textContent = t[key];
             });
 
-            // 更新按鈕狀態文字 (如果在抽籤中或已抽完)
             const btn = document.getElementById('drawBtn');
             if (!isDrawing) {
                 btn.textContent = drawnHistory.length > 0 ? t.drawAgain : t.startBtn;
             }
             
-            // 重新渲染歷史列表以更新 "第 N 抽" 文字
             renderHistory();
         }
 
-        // --- 背景功能 ---
+        // --- 背景功能 (更新：嘗試儲存到 LocalStorage) ---
         function handleBgUpload(input) {
             if (input.files && input.files[0]) {
+                const file = input.files[0];
+                const t = translations[currentSettings.lang];
+
                 const reader = new FileReader();
                 reader.onload = function(e) {
-                    document.body.style.backgroundImage = `url('${e.target.result}')`;
+                    const bgData = e.target.result;
+                    document.body.style.backgroundImage = `url('${bgData}')`;
+                    
+                    // 嘗試儲存
+                    try {
+                        localStorage.setItem('lottery_custom_bg', bgData);
+                    } catch (err) {
+                        console.error("Storage failed: Quota exceeded", err);
+                        alert(t.msgBgError);
+                    }
                 };
-                reader.readAsDataURL(input.files[0]);
+                reader.readAsDataURL(file);
             }
+        }
+
+        function clearCustomBg() {
+            localStorage.removeItem('lottery_custom_bg');
+            document.body.style.backgroundImage = "url('image_720f43.jpg')";
+            document.getElementById('bgInput').value = ""; // reset input
         }
 
         // --- 設定視窗 ---
@@ -530,7 +573,7 @@
             const noRepeat = document.getElementById('noRepeat').checked;
             const lang = document.getElementById('langSelect').value;
 
-            const t = translations[lang]; // 取得當前語言的錯誤訊息
+            const t = translations[lang]; 
 
             if (isNaN(min) || isNaN(max)) {
                 showMessage(t.msgInvalid);
@@ -541,7 +584,6 @@
                 return;
             }
 
-            // 檢查是否更動了設定
             if (min !== currentSettings.min || max !== currentSettings.max || noRepeat !== currentSettings.noRepeat) {
                 if (drawnHistory.length > 0) {
                      resetHistory();
@@ -552,9 +594,7 @@
             currentSettings = { min, max, noRepeat, lang };
             localStorage.setItem('lottery_settings', JSON.stringify(currentSettings));
             
-            // 確保關閉時語言設定被應用 (即使沒按儲存，只要改了選單)
             applyLanguage(lang);
-
             document.getElementById('settingsModal').classList.remove('active');
         }
 
@@ -588,7 +628,6 @@
             drawnHistory.forEach((num, index) => {
                 const item = document.createElement('div');
                 item.className = 'history-item';
-                // 替換文字中的變數 {n}
                 const indexText = t.drawIndex.replace('{n}', index + 1);
                 item.innerHTML = `
                     <span class="index">${indexText}</span>
@@ -608,7 +647,6 @@
             const resultEl = document.getElementById('result');
             const btn = document.getElementById('drawBtn');
 
-            // 檢查是否抽完
             if (noRepeat && drawnHistory.length >= (max - min + 1)) {
                 showMessage(t.msgAllDrawn);
                 fireConfetti();
@@ -620,28 +658,21 @@
             btn.style.opacity = "0.7";
             btn.textContent = t.drawing;
             
-            // --- 修改：實現減速與延長時間 ---
+            // 減速跳動效果
+            let speed = 50;       
+            let totalTime = 0;    
+            const fastPhaseDuration = 2500; 
             
-            let speed = 50;       // 初始速度 (毫秒/次)
-            let totalTime = 0;    // 累計時間
-            const fastPhaseDuration = 2500; // 高速跳動階段維持 2.5 秒 (增加時間)
-            
-            // 使用遞迴 setTimeout 替代 setInterval 以實現變速
             const runAnimation = () => {
-                // 1. 顯示隨機數字 (視覺效果)
                 const tempNum = Math.floor(Math.random() * (max - min + 1)) + min;
                 resultEl.textContent = tempNum;
                 
-                // 2. 計算累計時間
                 totalTime += speed;
 
-                // 3. 速度控制邏輯
                 if (totalTime > fastPhaseDuration) {
-                    // 超過高速階段後，開始減速 (每次間隔增加 15%)
                     speed = Math.floor(speed * 1.15);
                 }
 
-                // 4. 判斷是否停止 (當速度慢到約 600ms 跳一次時停止)
                 if (speed >= 600) {
                     finishDraw(min, max, noRepeat, t, resultEl, btn);
                 } else {
@@ -652,7 +683,6 @@
             runAnimation();
         }
 
-        // 抽籤結束處理函數 (獨立出來)
         function finishDraw(min, max, noRepeat, t, resultEl, btn) {
             let finalResult;
             if (noRepeat) {
