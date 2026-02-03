@@ -620,45 +620,65 @@
             btn.style.opacity = "0.7";
             btn.textContent = t.drawing;
             
-            let counter = 0;
-            const duration = 1500; 
-            const intervalTime = 50; 
+            // --- 修改：實現減速與延長時間 ---
             
-            const timer = setInterval(() => {
-                // 隨機跳動特效
-                resultEl.textContent = Math.floor(Math.random() * (max - min + 1)) + min;
-                counter += intervalTime;
+            let speed = 50;       // 初始速度 (毫秒/次)
+            let totalTime = 0;    // 累計時間
+            const fastPhaseDuration = 2500; // 高速跳動階段維持 2.5 秒 (增加時間)
+            
+            // 使用遞迴 setTimeout 替代 setInterval 以實現變速
+            const runAnimation = () => {
+                // 1. 顯示隨機數字 (視覺效果)
+                const tempNum = Math.floor(Math.random() * (max - min + 1)) + min;
+                resultEl.textContent = tempNum;
+                
+                // 2. 計算累計時間
+                totalTime += speed;
 
-                if (counter >= duration) {
-                    clearInterval(timer);
-                    
-                    let finalResult;
-                    if (noRepeat) {
-                        do {
-                            finalResult = Math.floor(Math.random() * (max - min + 1)) + min;
-                        } while (drawnHistory.includes(finalResult));
-                    } else {
-                        finalResult = Math.floor(Math.random() * (max - min + 1)) + min;
-                    }
-                    
-                    drawnHistory.push(finalResult);
-                    localStorage.setItem('lottery_history', JSON.stringify(drawnHistory));
-
-                    resultEl.textContent = finalResult;
-                    renderHistory(); // 更新列表
-                    
-                    isDrawing = false;
-                    btn.disabled = false;
-                    btn.style.opacity = "1";
-                    btn.textContent = t.drawAgain;
-
-                    resultEl.style.transition = "transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275)";
-                    resultEl.style.transform = "scale(1.2)";
-                    setTimeout(() => { resultEl.style.transform = "scale(1)"; }, 300);
-
-                    fireConfetti();
+                // 3. 速度控制邏輯
+                if (totalTime > fastPhaseDuration) {
+                    // 超過高速階段後，開始減速 (每次間隔增加 15%)
+                    speed = Math.floor(speed * 1.15);
                 }
-            }, intervalTime);
+
+                // 4. 判斷是否停止 (當速度慢到約 600ms 跳一次時停止)
+                if (speed >= 600) {
+                    finishDraw(min, max, noRepeat, t, resultEl, btn);
+                } else {
+                    setTimeout(runAnimation, speed);
+                }
+            };
+
+            runAnimation();
+        }
+
+        // 抽籤結束處理函數 (獨立出來)
+        function finishDraw(min, max, noRepeat, t, resultEl, btn) {
+            let finalResult;
+            if (noRepeat) {
+                do {
+                    finalResult = Math.floor(Math.random() * (max - min + 1)) + min;
+                } while (drawnHistory.includes(finalResult));
+            } else {
+                finalResult = Math.floor(Math.random() * (max - min + 1)) + min;
+            }
+            
+            drawnHistory.push(finalResult);
+            localStorage.setItem('lottery_history', JSON.stringify(drawnHistory));
+
+            resultEl.textContent = finalResult;
+            renderHistory(); 
+            
+            isDrawing = false;
+            btn.disabled = false;
+            btn.style.opacity = "1";
+            btn.textContent = t.drawAgain;
+
+            resultEl.style.transition = "transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275)";
+            resultEl.style.transform = "scale(1.2)";
+            setTimeout(() => { resultEl.style.transform = "scale(1)"; }, 300);
+
+            fireConfetti();
         }
 
         function fireConfetti() {
