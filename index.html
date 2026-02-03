@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>馬上如意 - 抽籤系統</title>
+    <title>Lucky Draw - 抽籤系統</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- 引入彩帶特效庫 -->
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
@@ -12,6 +12,7 @@
     <style>
         body {
             background-color: #8B0000; 
+            /* 預設背景圖 */
             background-image: url('image_720f43.jpg');
             background-size: cover;
             background-position: center;
@@ -20,12 +21,12 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            font-family: "Microsoft JhengHei", sans-serif;
+            font-family: "Microsoft JhengHei", "PingFang TC", sans-serif;
             margin: 0;
-            overflow: hidden; /* 防止背景滾動 */
+            overflow: hidden;
+            transition: background-image 0.5s ease;
         }
 
-        /* 主容器：使用 Flexbox 佈局左右欄 */
         .glass-container {
             background: rgba(255, 255, 255, 0.15);
             backdrop-filter: blur(10px);
@@ -35,8 +36,8 @@
             box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
             padding: 2rem;
             width: 90%;
-            max-width: 900px; /* 加寬以容納兩欄 */
-            height: 85vh;     /* 固定高度 */
+            max-width: 900px;
+            height: 85vh;
             color: white;
             display: flex;
             flex-direction: row;
@@ -44,7 +45,6 @@
             position: relative;
         }
 
-        /* 左側主操作區 */
         .left-panel {
             flex: 2;
             display: flex;
@@ -54,7 +54,6 @@
             position: relative;
         }
 
-        /* 右側歷史紀錄區 */
         .right-panel {
             flex: 1;
             background: rgba(0, 0, 0, 0.2);
@@ -66,28 +65,26 @@
             overflow: hidden;
         }
 
-        /* 手機版響應式設計 */
         @media (max-width: 768px) {
             .glass-container {
                 flex-direction: column;
                 height: 90vh;
                 padding: 1.5rem;
-                overflow-y: auto; /* 手機版允許內部滾動 */
+                overflow-y: auto;
             }
             .right-panel {
                 width: 100%;
-                flex: 1; /* 讓歷史紀錄佔據剩餘空間 */
+                flex: 1;
                 margin-top: 1rem;
                 border-left: none;
                 border-top: 1px solid rgba(255,255,255,0.1);
             }
             .result-display {
-                font-size: 6rem !important; /* 手機版字體稍微縮小 */
+                font-size: 6rem !important;
                 min-height: 150px !important;
             }
         }
 
-        /* 設定按鈕 */
         .settings-btn {
             position: absolute;
             top: 0;
@@ -108,9 +105,8 @@
             transform: rotate(90deg);
         }
 
-        /* 超大數字顯示 */
         .result-display {
-            font-size: 10rem; /* 變得更大 */
+            font-size: 10rem;
             font-weight: bold;
             color: #ffd700;
             text-shadow: 0 0 30px rgba(255, 215, 0, 0.6);
@@ -136,22 +132,13 @@
             width: 80%;
             max-width: 300px;
         }
-
         .draw-btn:hover:not(:disabled) {
             transform: scale(1.05);
             box-shadow: 0 6px 20px rgba(255, 215, 0, 0.4);
         }
+        .draw-btn:active:not(:disabled) { transform: scale(0.95); }
+        .draw-btn:disabled { cursor: not-allowed; filter: grayscale(0.5); }
 
-        .draw-btn:active:not(:disabled) {
-            transform: scale(0.95);
-        }
-
-        .draw-btn:disabled {
-            cursor: not-allowed;
-            filter: grayscale(0.5);
-        }
-
-        /* 歷史紀錄列表 */
         .history-title {
             font-size: 1.1rem;
             font-weight: bold;
@@ -171,15 +158,8 @@
             gap: 8px;
             padding-right: 5px;
         }
-        
-        /* 捲軸美化 */
-        .history-list::-webkit-scrollbar {
-            width: 6px;
-        }
-        .history-list::-webkit-scrollbar-thumb {
-            background: rgba(255, 215, 0, 0.3);
-            border-radius: 3px;
-        }
+        .history-list::-webkit-scrollbar { width: 6px; }
+        .history-list::-webkit-scrollbar-thumb { background: rgba(255, 215, 0, 0.3); border-radius: 3px; }
 
         .history-item {
             background: rgba(255, 255, 255, 0.1);
@@ -191,23 +171,14 @@
             animation: slideIn 0.3s ease-out;
             border-left: 3px solid #ffd700;
         }
-
-        .history-item .index {
-            opacity: 0.6;
-            font-size: 0.8rem;
-        }
-        .history-item .number {
-            font-size: 1.2rem;
-            font-weight: bold;
-            color: #ffd700;
-        }
+        .history-item .index { opacity: 0.6; font-size: 0.8rem; }
+        .history-item .number { font-size: 1.2rem; font-weight: bold; color: #ffd700; }
 
         @keyframes slideIn {
             from { transform: translateX(20px); opacity: 0; }
             to { transform: translateX(0); opacity: 1; }
         }
 
-        /* 設定視窗 (Modal) */
         .modal-overlay {
             position: fixed;
             top: 0;
@@ -224,10 +195,7 @@
             pointer-events: none;
             transition: opacity 0.3s;
         }
-        .modal-overlay.active {
-            opacity: 1;
-            pointer-events: auto;
-        }
+        .modal-overlay.active { opacity: 1; pointer-events: auto; }
 
         .modal-content {
             background: rgba(40, 40, 40, 0.95);
@@ -240,219 +208,318 @@
             text-align: center;
             transform: scale(0.9);
             transition: transform 0.3s;
+            max-height: 90vh;
+            overflow-y: auto;
         }
-        .modal-overlay.active .modal-content {
-            transform: scale(1);
-        }
+        .modal-overlay.active .modal-content { transform: scale(1); }
 
-        .custom-input {
+        .custom-input, .custom-select {
             background: rgba(255, 255, 255, 0.1);
             border: 1px solid rgba(255, 255, 255, 0.3);
             color: white;
-            padding: 0.8rem;
+            padding: 0.6rem;
             border-radius: 8px;
             width: 100%;
             outline: none;
             text-align: center;
-            font-size: 1.1rem;
-            margin-bottom: 1rem;
+            font-size: 1rem;
+            margin-bottom: 0.5rem;
         }
-        .custom-input:focus {
-            border-color: #ffd700;
+        .custom-select { text-align: left; cursor: pointer; }
+        .custom-select option { background: #333; color: white; }
+        .custom-input:focus, .custom-select:focus { border-color: #ffd700; }
+        
+        /* 檔案上傳按鈕樣式 */
+        .file-upload-wrapper {
+            position: relative;
+            margin-bottom: 1rem;
+            border: 1px dashed rgba(255, 255, 255, 0.3);
+            border-radius: 8px;
+            padding: 1rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .file-upload-wrapper:hover { border-color: #ffd700; background: rgba(255, 255, 255, 0.05); }
+        .file-upload-input {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            opacity: 0; cursor: pointer;
         }
 
         .save-btn {
-            background: #d4af37;
-            color: #2d0a0a;
-            border: none;
-            padding: 0.8rem 2rem;
-            border-radius: 8px;
-            font-weight: bold;
-            cursor: pointer;
-            width: 100%;
-            font-size: 1rem;
+            background: #d4af37; color: #2d0a0a; border: none;
+            padding: 0.8rem 2rem; border-radius: 8px; font-weight: bold;
+            cursor: pointer; width: 100%; font-size: 1rem; margin-top: 1rem;
         }
         .save-btn:hover { background: #c5a028; }
 
         .checkbox-wrapper {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-            margin: 1.5rem 0;
-            cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            gap: 10px; margin: 1rem 0; cursor: pointer;
         }
-        .custom-checkbox {
-            width: 20px;
-            height: 20px;
-            accent-color: #d4af37;
-        }
+        .custom-checkbox { width: 20px; height: 20px; accent-color: #d4af37; }
 
         .message-box {
-            position: fixed;
-            top: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            padding: 10px 20px;
-            border-radius: 8px;
-            background: rgba(220, 38, 38, 0.9);
-            color: white;
-            display: none;
-            z-index: 2000;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
+            padding: 10px 20px; border-radius: 8px; background: rgba(220, 38, 38, 0.9);
+            color: white; display: none; z-index: 2000; box-shadow: 0 4px 10px rgba(0,0,0,0.3);
         }
         
         .reset-link {
-            font-size: 0.8rem;
-            color: rgba(255,255,255,0.6);
-            text-decoration: underline;
-            cursor: pointer;
-            border: none;
-            background: none;
+            font-size: 0.8rem; color: rgba(255,255,255,0.6);
+            text-decoration: underline; cursor: pointer; border: none; background: none;
         }
         .reset-link:hover { color: white; }
-
+        
+        .section-label {
+            text-align: left; font-size: 0.8rem; opacity: 0.7; margin-bottom: 4px; display: block;
+        }
     </style>
 </head>
 <body>
 
-    <!-- 錯誤提示框 -->
     <div id="messageBox" class="message-box"></div>
 
     <!-- 設定彈出視窗 -->
     <div id="settingsModal" class="modal-overlay">
         <div class="modal-content">
-            <h2 class="text-2xl font-bold mb-4 text-[#ffd700]">抽籤設定</h2>
+            <h2 class="text-2xl font-bold mb-4 text-[#ffd700]" data-i18n="settingsTitle">設定</h2>
             
-            <div class="text-left mb-2 text-sm opacity-80">數字範圍</div>
+            <!-- 語言設定 -->
+            <label class="section-label" data-i18n="language">語言 / Language</label>
+            <select id="langSelect" class="custom-select" onchange="changeLanguage()">
+                <option value="zh-TW">繁體中文</option>
+                <option value="zh-CN">简体中文</option>
+                <option value="en">English</option>
+            </select>
+
+            <div class="my-4 border-t border-white/10"></div>
+
+            <!-- 背景設定 -->
+            <label class="section-label" data-i18n="bgImage">背景圖片</label>
+            <div class="file-upload-wrapper">
+                <span class="text-sm opacity-80" data-i18n="clickToUpload">點擊上傳背景圖片</span>
+                <input type="file" id="bgInput" class="file-upload-input" accept="image/*" onchange="handleBgUpload(this)">
+            </div>
+
+            <div class="my-4 border-t border-white/10"></div>
+
+            <!-- 數字範圍 -->
+            <label class="section-label" data-i18n="numRange">數字範圍</label>
             <div class="flex gap-4 mb-2">
-                <div>
-                    <label class="text-xs opacity-60">最小值</label>
+                <div class="w-1/2">
+                    <label class="text-xs opacity-60 block mb-1" data-i18n="min">最小值</label>
                     <input type="number" id="minRange" class="custom-input" value="1">
                 </div>
-                <div>
-                    <label class="text-xs opacity-60">最大值</label>
+                <div class="w-1/2">
+                    <label class="text-xs opacity-60 block mb-1" data-i18n="max">最大值</label>
                     <input type="number" id="maxRange" class="custom-input" value="40">
                 </div>
             </div>
 
             <label class="checkbox-wrapper">
                 <input type="checkbox" id="noRepeat" class="custom-checkbox">
-                <span>開啟「不重複抽籤」模式</span>
+                <span data-i18n="noRepeatMode">開啟「不重複抽籤」模式</span>
             </label>
 
-            <button onclick="closeSettings()" class="save-btn">儲存並關閉</button>
+            <button onclick="closeSettings()" class="save-btn" data-i18n="saveBtn">儲存並關閉</button>
         </div>
     </div>
 
     <!-- 主界面 -->
     <div class="glass-container">
         
-        <!-- 左側主操作區 -->
         <div class="left-panel">
-            <button onclick="openSettings()" class="settings-btn" title="設定">
+            <button onclick="openSettings()" class="settings-btn" title="Settings">
                 <i data-lucide="settings"></i>
             </button>
 
-            <h1 class="text-4xl font-bold mb-2 text-shadow-sm mt-4">馬上如意</h1>
-            <p class="text-sm opacity-90 mb-4">幸運抽籤系統</p>
+            <!-- 標題區域：已移除「馬上如意」 -->
+            <h1 class="text-4xl font-bold mb-2 text-shadow-sm mt-4" data-i18n="appTitle">抽籤系統</h1>
+            <p class="text-sm opacity-90 mb-4" data-i18n="appSubtitle">幸運隨機產生器</p>
 
             <div id="result" class="result-display">?</div>
 
-            <button onclick="startDraw()" id="drawBtn" class="draw-btn">
+            <button onclick="startDraw()" id="drawBtn" class="draw-btn" data-i18n="startBtn">
                 開始抽籤
             </button>
             
-            <p class="mt-8 text-xs opacity-60">點擊左上角 <i data-lucide="settings" style="width:12px; display:inline;"></i> 可調整範圍</p>
+            <p class="mt-8 text-xs opacity-60" data-i18n="footerTip">點擊左上角設定圖示可調整功能</p>
         </div>
 
-        <!-- 右側歷史紀錄欄 -->
         <div class="right-panel">
             <div class="history-title">
-                <span>歷史紀錄</span>
-                <button onclick="resetHistory()" class="reset-link">清除</button>
+                <span data-i18n="historyTitle">歷史紀錄</span>
+                <button onclick="resetHistory()" class="reset-link" data-i18n="clearBtn">清除</button>
             </div>
             <div id="historyList" class="history-list">
-                <!-- 歷史紀錄將會顯示在這裡 -->
-                <div class="text-center text-xs opacity-40 mt-10">尚無紀錄</div>
+                <div class="text-center text-xs opacity-40 mt-10" data-i18n="noHistory">尚無紀錄</div>
             </div>
         </div>
 
     </div>
 
     <script>
-        // 初始化圖標
         lucide.createIcons();
+
+        // 多語言字典
+        const translations = {
+            'zh-TW': {
+                appTitle: "抽籤系統",
+                appSubtitle: "幸運隨機產生器",
+                settingsTitle: "設定",
+                language: "語言",
+                bgImage: "更換背景",
+                clickToUpload: "點擊上傳背景圖片",
+                numRange: "數字範圍",
+                min: "最小值",
+                max: "最大值",
+                noRepeatMode: "開啟「不重複抽籤」模式",
+                saveBtn: "儲存並關閉",
+                startBtn: "開始抽籤",
+                drawing: "抽籤中...",
+                drawAgain: "再次抽籤",
+                historyTitle: "歷史紀錄",
+                clearBtn: "清除",
+                noHistory: "尚無紀錄",
+                drawIndex: "第 {n} 抽",
+                footerTip: "點擊左上角設定圖示可調整功能",
+                msgInvalid: "請輸入有效的數字！",
+                msgMinMax: "最小值必須小於最大值！",
+                msgReset: "設定已變更，歷史紀錄已重置",
+                msgAllDrawn: "🎉 所有數字都已經抽完囉！"
+            },
+            'zh-CN': {
+                appTitle: "抽签系统",
+                appSubtitle: "幸运随机生成器",
+                settingsTitle: "设置",
+                language: "语言",
+                bgImage: "更换背景",
+                clickToUpload: "点击上传背景图片",
+                numRange: "数字范围",
+                min: "最小值",
+                max: "最大值",
+                noRepeatMode: "开启“不重复抽签”模式",
+                saveBtn: "保存并关闭",
+                startBtn: "开始抽签",
+                drawing: "抽签中...",
+                drawAgain: "再次抽签",
+                historyTitle: "历史记录",
+                clearBtn: "清除",
+                noHistory: "暂无记录",
+                drawIndex: "第 {n} 抽",
+                footerTip: "点击左上角设置图标可调整功能",
+                msgInvalid: "请输入有效的数字！",
+                msgMinMax: "最小值必须小于最大值！",
+                msgReset: "设置已变更，历史记录已重置",
+                msgAllDrawn: "🎉 所有数字都已经抽完啦！"
+            },
+            'en': {
+                appTitle: "Lucky Draw",
+                appSubtitle: "Random Number Generator",
+                settingsTitle: "Settings",
+                language: "Language",
+                bgImage: "Background Image",
+                clickToUpload: "Click to upload image",
+                numRange: "Number Range",
+                min: "Min Value",
+                max: "Max Value",
+                noRepeatMode: "No Repeat Mode",
+                saveBtn: "Save & Close",
+                startBtn: "Start",
+                drawing: "Drawing...",
+                drawAgain: "Draw Again",
+                historyTitle: "History",
+                clearBtn: "Clear",
+                noHistory: "No History",
+                drawIndex: "Draw #{n}",
+                footerTip: "Click top-left icon for settings",
+                msgInvalid: "Please input valid numbers!",
+                msgMinMax: "Min must be less than Max!",
+                msgReset: "Settings changed, history reset.",
+                msgAllDrawn: "🎉 All numbers have been drawn!"
+            }
+        };
 
         let isDrawing = false;
         let drawnHistory = [];
-        // 記錄當前的設定，用於檢查是否變更
-        let currentSettings = { min: 1, max: 40, noRepeat: false };
+        let currentSettings = { min: 1, max: 40, noRepeat: false, lang: 'zh-TW' };
 
-        // 頁面載入時讀取 localStorage 資料
+        // 頁面載入
         window.addEventListener('load', loadData);
 
         function loadData() {
-            // 載入設定
             const savedSettings = localStorage.getItem('lottery_settings');
             if (savedSettings) {
                 try {
-                    currentSettings = JSON.parse(savedSettings);
-                    // 同步到 UI
-                    document.getElementById('minRange').value = currentSettings.min;
-                    document.getElementById('maxRange').value = currentSettings.max;
-                    document.getElementById('noRepeat').checked = currentSettings.noRepeat;
-                } catch (e) {
-                    console.error("讀取設定失敗", e);
-                }
+                    const parsed = JSON.parse(savedSettings);
+                    // 合併設定，確保新欄位存在
+                    currentSettings = { ...currentSettings, ...parsed };
+                } catch (e) { console.error(e); }
             }
 
-            // 載入歷史紀錄
+            // 應用設定到 UI
+            document.getElementById('minRange').value = currentSettings.min;
+            document.getElementById('maxRange').value = currentSettings.max;
+            document.getElementById('noRepeat').checked = currentSettings.noRepeat;
+            document.getElementById('langSelect').value = currentSettings.lang || 'zh-TW';
+
+            // 應用語言文字
+            applyLanguage(currentSettings.lang);
+
+            // 載入歷史
             const savedHistory = localStorage.getItem('lottery_history');
             if (savedHistory) {
                 try {
                     drawnHistory = JSON.parse(savedHistory);
-                    
                     if (drawnHistory.length > 0) {
-                        // 顯示最後一個抽出的號碼
                         document.getElementById('result').textContent = drawnHistory[drawnHistory.length - 1];
-                        
-                        // 重建歷史紀錄列表
-                        const list = document.getElementById('historyList');
-                        list.innerHTML = ''; // 清除 "尚無紀錄"
-
-                        // 遍歷並加入 DOM (確保順序正確：最新的在上面)
-                        drawnHistory.forEach((num, index) => {
-                            const item = document.createElement('div');
-                            item.className = 'history-item';
-                            item.innerHTML = `
-                                <span class="index">第 ${index + 1} 抽</span>
-                                <span class="number">${num}</span>
-                            `;
-                            // 最新的插入到第一個位置
-                            if(list.firstChild) {
-                                list.insertBefore(item, list.firstChild);
-                            } else {
-                                list.appendChild(item);
-                            }
-                        });
+                        document.getElementById('drawBtn').textContent = translations[currentSettings.lang].drawAgain;
+                        renderHistory();
                     }
-                } catch (e) {
-                    console.error("讀取歷史紀錄失敗", e);
-                }
+                } catch (e) { console.error(e); }
             }
         }
 
-        function showMessage(msg) {
-            const box = document.getElementById('messageBox');
-            box.textContent = msg;
-            box.style.display = 'block';
-            setTimeout(() => {
-                box.style.display = 'none';
-            }, 3000);
+        // --- 語言功能 ---
+        function changeLanguage() {
+            const lang = document.getElementById('langSelect').value;
+            applyLanguage(lang);
         }
 
-        // --- 設定視窗邏輯 ---
+        function applyLanguage(lang) {
+            if (!translations[lang]) lang = 'zh-TW';
+            const t = translations[lang];
+
+            // 更新所有帶 data-i18n 的元素
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                if (t[key]) el.textContent = t[key];
+            });
+
+            // 更新按鈕狀態文字 (如果在抽籤中或已抽完)
+            const btn = document.getElementById('drawBtn');
+            if (!isDrawing) {
+                btn.textContent = drawnHistory.length > 0 ? t.drawAgain : t.startBtn;
+            }
+            
+            // 重新渲染歷史列表以更新 "第 N 抽" 文字
+            renderHistory();
+        }
+
+        // --- 背景功能 ---
+        function handleBgUpload(input) {
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    document.body.style.backgroundImage = `url('${e.target.result}')`;
+                };
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        // --- 設定視窗 ---
         function openSettings() {
             document.getElementById('settingsModal').classList.add('active');
         }
@@ -461,90 +528,141 @@
             const min = parseInt(document.getElementById('minRange').value);
             const max = parseInt(document.getElementById('maxRange').value);
             const noRepeat = document.getElementById('noRepeat').checked;
+            const lang = document.getElementById('langSelect').value;
+
+            const t = translations[lang]; // 取得當前語言的錯誤訊息
 
             if (isNaN(min) || isNaN(max)) {
-                showMessage("請輸入有效的數字！");
+                showMessage(t.msgInvalid);
                 return;
             }
             if (min >= max) {
-                showMessage("最小值必須小於最大值！");
+                showMessage(t.msgMinMax);
                 return;
             }
 
-            // 檢查是否更動了設定，如果是，建議清除歷史
+            // 檢查是否更動了設定
             if (min !== currentSettings.min || max !== currentSettings.max || noRepeat !== currentSettings.noRepeat) {
                 if (drawnHistory.length > 0) {
-                     // 簡單處理：如果改了範圍，自動重置
                      resetHistory();
-                     showMessage("設定已變更，歷史紀錄已重置");
+                     showMessage(t.msgReset);
                 }
-                currentSettings = { min, max, noRepeat };
-                
-                // 儲存設定到 localStorage
-                localStorage.setItem('lottery_settings', JSON.stringify(currentSettings));
             }
+
+            currentSettings = { min, max, noRepeat, lang };
+            localStorage.setItem('lottery_settings', JSON.stringify(currentSettings));
+            
+            // 確保關閉時語言設定被應用 (即使沒按儲存，只要改了選單)
+            applyLanguage(lang);
 
             document.getElementById('settingsModal').classList.remove('active');
         }
 
-        // --- 抽籤邏輯 ---
-
-        function getRandomInt(min, max) {
-            return Math.floor(Math.random() * (max - min + 1)) + min;
-        }
-
-        function checkAllDrawn(min, max) {
-            const totalNumbers = max - min + 1;
-            return drawnHistory.length >= totalNumbers;
-        }
-
-        function getUniqueRandomInt(min, max) {
-            let num;
-            // 防呆：避免無窮迴圈
-            let safetyCounter = 0;
-            do {
-                num = getRandomInt(min, max);
-                safetyCounter++;
-                if (safetyCounter > 10000) return null; // 應該不會發生，因為前面有 checkAllDrawn
-            } while (drawnHistory.includes(num));
-            return num;
+        // --- 抽籤與歷史 ---
+        function showMessage(msg) {
+            const box = document.getElementById('messageBox');
+            box.textContent = msg;
+            box.style.display = 'block';
+            setTimeout(() => { box.style.display = 'none'; }, 3000);
         }
 
         function resetHistory() {
             drawnHistory = [];
-            // 清除 localStorage 中的歷史紀錄
             localStorage.removeItem('lottery_history');
-            
-            const list = document.getElementById('historyList');
-            list.innerHTML = '<div class="text-center text-xs opacity-40 mt-10">尚無紀錄</div>';
             document.getElementById('result').textContent = '?';
+            const t = translations[currentSettings.lang];
+            document.getElementById('drawBtn').textContent = t.startBtn;
+            renderHistory();
         }
 
-        function updateHistoryUI(num) {
+        function renderHistory() {
             const list = document.getElementById('historyList');
+            const t = translations[currentSettings.lang];
             
-            // 如果是第一筆，清空"尚無紀錄"
-            if (drawnHistory.length === 1) {
-                list.innerHTML = '';
+            if (drawnHistory.length === 0) {
+                list.innerHTML = `<div class="text-center text-xs opacity-40 mt-10" data-i18n="noHistory">${t.noHistory}</div>`;
+                return;
             }
-            
-            const item = document.createElement('div');
-            item.className = 'history-item';
-            item.innerHTML = `
-                <span class="index">第 ${drawnHistory.length} 抽</span>
-                <span class="number">${num}</span>
-            `;
-            
-            // 把最新的插在最前面
-            if(list.firstChild) {
-                list.insertBefore(item, list.firstChild);
-            } else {
-                list.appendChild(item);
+
+            list.innerHTML = '';
+            drawnHistory.forEach((num, index) => {
+                const item = document.createElement('div');
+                item.className = 'history-item';
+                // 替換文字中的變數 {n}
+                const indexText = t.drawIndex.replace('{n}', index + 1);
+                item.innerHTML = `
+                    <span class="index">${indexText}</span>
+                    <span class="number">${num}</span>
+                `;
+                if(list.firstChild) list.insertBefore(item, list.firstChild);
+                else list.appendChild(item);
+            });
+        }
+
+        // --- 核心邏輯 ---
+        function startDraw() {
+            if (isDrawing) return;
+
+            const { min, max, noRepeat, lang } = currentSettings;
+            const t = translations[lang];
+            const resultEl = document.getElementById('result');
+            const btn = document.getElementById('drawBtn');
+
+            // 檢查是否抽完
+            if (noRepeat && drawnHistory.length >= (max - min + 1)) {
+                showMessage(t.msgAllDrawn);
+                fireConfetti();
+                return;
             }
+
+            isDrawing = true;
+            btn.disabled = true;
+            btn.style.opacity = "0.7";
+            btn.textContent = t.drawing;
+            
+            let counter = 0;
+            const duration = 1500; 
+            const intervalTime = 50; 
+            
+            const timer = setInterval(() => {
+                // 隨機跳動特效
+                resultEl.textContent = Math.floor(Math.random() * (max - min + 1)) + min;
+                counter += intervalTime;
+
+                if (counter >= duration) {
+                    clearInterval(timer);
+                    
+                    let finalResult;
+                    if (noRepeat) {
+                        do {
+                            finalResult = Math.floor(Math.random() * (max - min + 1)) + min;
+                        } while (drawnHistory.includes(finalResult));
+                    } else {
+                        finalResult = Math.floor(Math.random() * (max - min + 1)) + min;
+                    }
+                    
+                    drawnHistory.push(finalResult);
+                    localStorage.setItem('lottery_history', JSON.stringify(drawnHistory));
+
+                    resultEl.textContent = finalResult;
+                    renderHistory(); // 更新列表
+                    
+                    isDrawing = false;
+                    btn.disabled = false;
+                    btn.style.opacity = "1";
+                    btn.textContent = t.drawAgain;
+
+                    resultEl.style.transition = "transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275)";
+                    resultEl.style.transform = "scale(1.2)";
+                    setTimeout(() => { resultEl.style.transform = "scale(1)"; }, 300);
+
+                    fireConfetti();
+                }
+            }, intervalTime);
         }
 
         function fireConfetti() {
-            var duration = 3 * 1000;
+            var duration = 3000;
             var animationEnd = Date.now() + duration;
             var defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 0 };
             var random = function(min, max) { return Math.random() * (max - min) + min; }
@@ -556,68 +674,6 @@
               confetti(Object.assign({}, defaults, { particleCount, origin: { x: random(0.1, 0.3), y: Math.random() - 0.2 } }));
               confetti(Object.assign({}, defaults, { particleCount, origin: { x: random(0.7, 0.9), y: Math.random() - 0.2 } }));
             }, 250);
-        }
-
-        function startDraw() {
-            if (isDrawing) return;
-
-            const min = currentSettings.min;
-            const max = currentSettings.max;
-            const noRepeat = currentSettings.noRepeat;
-            const resultEl = document.getElementById('result');
-            const btn = document.getElementById('drawBtn');
-
-            if (noRepeat && checkAllDrawn(min, max)) {
-                showMessage("🎉 所有數字都已經抽完囉！");
-                fireConfetti();
-                return;
-            }
-
-            isDrawing = true;
-            btn.disabled = true;
-            btn.style.opacity = "0.7";
-            btn.textContent = "抽籤中...";
-            
-            let counter = 0;
-            const duration = 1500; 
-            const intervalTime = 50; 
-            
-            const timer = setInterval(() => {
-                resultEl.textContent = getRandomInt(min, max);
-                counter += intervalTime;
-
-                if (counter >= duration) {
-                    clearInterval(timer);
-                    
-                    let finalResult;
-                    if (noRepeat) {
-                        finalResult = getUniqueRandomInt(min, max);
-                    } else {
-                        finalResult = getRandomInt(min, max);
-                    }
-                    
-                    drawnHistory.push(finalResult);
-                    
-                    // 儲存最新的歷史紀錄到 localStorage
-                    localStorage.setItem('lottery_history', JSON.stringify(drawnHistory));
-
-                    resultEl.textContent = finalResult;
-                    updateHistoryUI(finalResult);
-                    
-                    isDrawing = false;
-                    btn.disabled = false;
-                    btn.style.opacity = "1";
-                    btn.textContent = "再次抽籤";
-
-                    resultEl.style.transition = "transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275)";
-                    resultEl.style.transform = "scale(1.2)";
-                    setTimeout(() => {
-                        resultEl.style.transform = "scale(1)";
-                    }, 300);
-
-                    fireConfetti();
-                }
-            }, intervalTime);
         }
     </script>
 </body>
